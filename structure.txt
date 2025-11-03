@@ -1,0 +1,11 @@
+En APP esta toda la app y su estructura:
+
+-Componentes: Contiene cosas de la app generales, como botones, Input donde pide la info para los formularios, Loader para cuando carga la app y por ultimo el selector que es un imput con opciones
+
+-Media: Contiene una carpeta donde se guardan las imagenes de la app, si hubieran iconos o algun archivo media iria aca
+
+-SQL: Donde se conectan la base de dato, se hacen las medidas de Hash y seguridad (mientras mas mejor), y se conecta al SQL
+
+-Styles: Aca estan los .css para poner los estilos a cada pagina
+
+-Tabs: Cada Pantalla donde se guardan formularios, pagina de inicio, y paginas principales
