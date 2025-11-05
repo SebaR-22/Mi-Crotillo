@@ -1,0 +1,219 @@
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  RefreshControl,
+  Animated,
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useDatabase } from '../../services/DatabaseContext';
+import CategoryEditor from '../../componentes/categorias/CategoryEditor';
+import { SwipeableRow, AnimatedCard } from '../../componentes/ui/ModernUI';
+
+const Categorias = ({ navigation }) => {
+  const { categories, fetchCategories, updateCategory } = useDatabase();
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [showEditor, setShowEditor] = useState(false);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      await fetchCategories();
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+    }
+  };
+
+  if (!categories) return null;
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadCategories();
+    setRefreshing(false);
+  };
+
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    setShowEditor(true);
+  };
+
+  const handleToggleActive = async (category) => {
+    try {
+      await updateCategory(category.id, {
+        ...category,
+        activo: !category.activo,
+      });
+    } catch (error) {
+      console.error('Error al actualizar categoría:', error);
+    }
+  };
+
+  const renderCategory = ({ item }) => {
+    const rightActions = (
+      <View style={styles.actionButtons}>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#666' }]}
+          onPress={() => handleEdit(item)}
+        >
+          <MaterialIcons name="edit" size={24} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: item.activo ? '#ff3b30' : '#34c759' }]}
+          onPress={() => handleToggleActive(item)}
+        >
+          <MaterialIcons
+            name={item.activo ? 'visibility-off' : 'visibility'}
+            size={24}
+            color="#fff"
+          />
+        </TouchableOpacity>
+      </View>
+    );
+
+    return (
+      <SwipeableRow rightActions={rightActions}>
+        <AnimatedCard>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('TransaccionCategoria', { categoria: item })}
+            style={[styles.categoryCard, !item.activo && styles.inactiveCard]}
+          >
+            <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
+              <MaterialIcons name={item.icono} size={24} color="#fff" />
+            </View>
+            <View style={styles.categoryInfo}>
+              <Text style={styles.categoryName}>{item.nombre}</Text>
+              <Text style={styles.categoryType}>
+                {item.tipo === 'INGRESO' ? '↑ Ingreso' : '↓ Gasto'}
+              </Text>
+            </View>
+            <View style={styles.statusIndicator}>
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: item.activo ? '#34c759' : '#ff3b30' },
+                ]}
+              />
+            </View>
+          </TouchableOpacity>
+        </AnimatedCard>
+      </SwipeableRow>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={categories}
+        renderItem={renderCategory}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      />
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => {
+          setEditingCategory(null);
+          setShowEditor(true);
+        }}
+      >
+        <MaterialIcons name="add" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <CategoryEditor
+        category={editingCategory}
+        isVisible={showEditor}
+        onClose={() => {
+          setShowEditor(false);
+          setEditingCategory(null);
+        }}
+      />
+    </View>
+  );
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  listContainer: {
+    padding: 16,
+  },
+  categoryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+  },
+  inactiveCard: {
+    opacity: 0.6,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryName: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  categoryType: {
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+  },
+  statusIndicator: {
+    marginLeft: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    width: 64,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fab: {
+    position: 'absolute',
+    right: 16,
+    bottom: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#0084ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+});
+
+export default Categorias;

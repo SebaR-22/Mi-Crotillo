@@ -1,0 +1,205 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, TextInput } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import ColorPicker from 'react-native-wheel-color-picker';
+import { useDatabase } from '../../services/DatabaseContext';
+import { SwipeableRow, AnimatedCard, BottomSheet } from '../ui/ModernUI';
+
+const CategoryEditor = ({ category, onClose, isVisible }) => {
+  const { createCategory, updateCategory } = useDatabase();
+  const [name, setName] = React.useState(category?.nombre || '');
+  const [icon, setIcon] = React.useState(category?.icono || 'label');
+  const [color, setColor] = React.useState(category?.color || '#0084ff');
+  const [tipo, setTipo] = React.useState(category?.tipo || 'GASTO');
+
+  const handleSave = async () => {
+    const categoryData = {
+      nombre: name,
+      icono: icon,
+      color,
+      tipo,
+      activo: true
+    };
+
+    try {
+      if (category?.id) {
+        await updateCategory(category.id, categoryData);
+      } else {
+        await createCategory(categoryData);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error al guardar categoría:', error);
+    }
+  };
+
+  return (
+    <BottomSheet isVisible={isVisible} onClose={onClose}>
+      <View style={styles.editorContainer}>
+        <Text style={styles.editorTitle}>
+          {category?.id ? 'Editar Categoría' : 'Nueva Categoría'}
+        </Text>
+        
+        <TextInput
+          style={styles.input}
+          value={name}
+          onChangeText={setName}
+          placeholder="Nombre de la categoría"
+        />
+
+        <View style={styles.typeSelector}>
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              tipo === 'GASTO' && styles.typeButtonActive
+            ]}
+            onPress={() => setTipo('GASTO')}
+          >
+            <MaterialIcons 
+              name="arrow-downward" 
+              size={24} 
+              color={tipo === 'GASTO' ? '#fff' : '#666'} 
+            />
+            <Text style={[
+              styles.typeText,
+              tipo === 'GASTO' && styles.typeTextActive
+            ]}>Gasto</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.typeButton,
+              tipo === 'INGRESO' && styles.typeButtonActive
+            ]}
+            onPress={() => setTipo('INGRESO')}
+          >
+            <MaterialIcons 
+              name="arrow-upward" 
+              size={24} 
+              color={tipo === 'INGRESO' ? '#fff' : '#666'} 
+            />
+            <Text style={[
+              styles.typeText,
+              tipo === 'INGRESO' && styles.typeTextActive
+            ]}>Ingreso</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.colorPickerContainer}>
+          <ColorPicker
+            color={color}
+            onColorChange={setColor}
+            thumbSize={30}
+            sliderSize={20}
+            noSnap={true}
+            row={false}
+          />
+        </View>
+
+        <View style={styles.iconSelector}>
+          {['label', 'shopping-cart', 'home', 'directions-car', 'restaurant', 'local-hospital'].map((iconName) => (
+            <TouchableOpacity
+              key={iconName}
+              style={[
+                styles.iconButton,
+                icon === iconName && { backgroundColor: color }
+              ]}
+              onPress={() => setIcon(iconName)}
+            >
+              <MaterialIcons
+                name={iconName}
+                size={24}
+                color={icon === iconName ? '#fff' : '#666'}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity
+          style={[styles.saveButton, { backgroundColor: color }]}
+          onPress={handleSave}
+        >
+          <Text style={styles.saveButtonText}>Guardar</Text>
+        </TouchableOpacity>
+      </View>
+    </BottomSheet>
+  );
+};
+
+const styles = StyleSheet.create({
+  editorContainer: {
+    padding: 16,
+  },
+  editorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  typeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  typeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    marginHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+  },
+  typeButtonActive: {
+    backgroundColor: '#0084ff',
+  },
+  typeText: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#666',
+  },
+  typeTextActive: {
+    color: '#fff',
+  },
+  colorPickerContainer: {
+    height: 200,
+    marginBottom: 20,
+  },
+  iconSelector: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  iconButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    margin: 8,
+  },
+  saveButton: {
+    backgroundColor: '#0084ff',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+export default CategoryEditor;
